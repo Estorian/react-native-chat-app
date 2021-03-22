@@ -11,6 +11,7 @@ export default class Chat extends React.Component {
     }
 
     componentDidMount() {
+        let userJoinedMessage = `User ${this.props.route.params.name} has joined the chat.`;
         this.setState({
             messages: [
                 {
@@ -25,7 +26,7 @@ export default class Chat extends React.Component {
                 },
                 {
                     _id: 2,
-                    text: 'This is a system message',
+                    text: userJoinedMessage,
                     createdAt: new Date(),
                     system: true,
                 },
