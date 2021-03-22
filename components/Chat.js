@@ -10,6 +10,7 @@ export default class Chat extends React.Component {
         }
     }
 
+    // Creates a system message that announces the user's arrival and puts in a first message.
     componentDidMount() {
         let userJoinedMessage = `User ${this.props.route.params.name} has joined the chat.`;
         this.setState({
@@ -34,25 +35,14 @@ export default class Chat extends React.Component {
         })
     }
 
+    // Adds messages to the current chat log.
     onSend(messages = []) {
         this.setState(previousState => ({
             messages: GiftedChat.append(previousState.messages, messages),
         }))
     }
 
-    renderBubble(props) {
-        return (
-            <Bubble 
-                {...props}
-                wrapperStyle={{
-                    right: {
-                        backgroundColor: '#000'
-                    }
-                }}
-            />
-        )
-    }
-
+    // Changes the system message color depending on the background color for accessibility.
     renderSystemMessage(props) {
         if (this.props.route.params.BGColor == '#8A95A5' || this.props.route.params.BGColor == '#B9C6AE') {
             return (
@@ -81,7 +71,6 @@ export default class Chat extends React.Component {
             <View style={{ flex: 1, backgroundColor: BGColor}}>
             <GiftedChat
                 renderSystemMessage={this.renderSystemMessage.bind(this)}
-                renderBubble={this.renderBubble.bind(this)}
                 messages={this.state.messages}
                 onSend = {messages => this.onSend(messages)}
                 user={{

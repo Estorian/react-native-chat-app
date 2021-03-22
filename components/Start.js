@@ -11,6 +11,7 @@ export default class Start extends React.Component {
         };
     }
 
+    // Forces a user to select a username before they are allowed into the chat.
     checkName = () => {
         if (this.state.name == '') {
             Alert.alert('Please enter a username');
@@ -18,6 +19,7 @@ export default class Start extends React.Component {
         this.props.navigation.navigate('Chat', { name: this.state.name, BGColor: this.state.BGColor });
     }}
     
+    //Sets the color of the chat screen
     setBackground = (color) => {
         this.setState({
             BGColor: color
@@ -25,6 +27,7 @@ export default class Start extends React.Component {
     }
 
     render() {
+        // Sets the standard colors
         let colors= ['#090C08', '#474056', '#8A95A5', '#B9C6AE'];
         
 
