@@ -1,45 +1,104 @@
 import React from 'react';
 import { View, Text, Platform, KeyboardAvoidingView } from 'react-native';
-import { GiftedChat, Bubble, SystemMessage } from 'react-native-gifted-chat';
+import { GiftedChat, SystemMessage } from 'react-native-gifted-chat';
+import firebase from 'firebase';
+import firestore from 'firebase';
 
 export default class Chat extends React.Component {
     constructor() {
         super();
         this.state = {
             messages: [],
+            user: '',
+            uid: ''
         }
+
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCld5n94kpQ4zrCRGdbd0bnoc6nSjtWIdQ",
+            authDomain: "rn-chat-app-6f67f.firebaseapp.com",
+            projectId: "rn-chat-app-6f67f",
+            storageBucket: "rn-chat-app-6f67f.appspot.com",
+            messagingSenderId: "722808181511",
+            appId: "1:722808181511:web:0eecd1a832386b41236ba2",
+            measurementId: "G-B1XVBXMRC5"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        this.referenceChatMessages = firebase.firestore().collection("messages");
     }
 
     // Creates a system message that announces the user's arrival and puts in a first message.
     componentDidMount() {
-        let userJoinedMessage = `User ${this.props.route.params.name} has joined the chat.`;
+        this.referenceChatMessages = firebase.firestore().collection('messages');
+        this.unsubscribe = this.referenceChatMessages.onSnapshot(this.onCollectionUpdate);
+        
+        this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                firebase.auth().signInAnonymously();
+            }
+
+            //update user state with currently active user data
+            this.setState({
+                messages: [],
+                uid: user.uid,
+            });
+            this.unsubscribe = this.referenceChatMessages
+                .orderBy("createdAt", "desc")    
+                .onSnapshot(this.onCollectionUpdate);
+        
+        });
+        
+        
         this.setState({
-            messages: [
-                {
-                    _id: 1,
-                    text: 'Hello developer',
-                    createdAt: new Date(),
-                    user: {
-                        _id: 2,
-                        name: 'React Native',
-                        avatar: 'https://placeimg.com/140/140/any',
-                    },
-                },
-                {
-                    _id: 2,
-                    text: userJoinedMessage,
-                    createdAt: new Date(),
-                    system: true,
-                },
-            ],
+            user: this.props.route.params.name,
         })
     }
 
-    // Adds messages to the current chat log.
+    //Logs out of Firebase when the chat room is left.
+    componentWillUnmount() {
+        this.unsubscribe();
+        this.authUnsubscribe();
+    }
+
+    //Updates the messages in the state everytime they change on the firestore
+    onCollectionUpdate = (querySnapshot) => {
+        const messages = [];
+        // go through each document
+        querySnapshot.forEach((doc) => {
+            //get the QueryDocumentSnapshot's data
+            let data = doc.data();
+            messages.push({
+                _id: data._id,
+                text: data.text,
+                createdAt: data.createdAt.toDate(),
+                user: data.user
+            });
+        });
+        this.setState({
+            messages,
+        });
+    };
+
+    //Adds messages to the firebase.
+    addMessage = (messageText) => {
+        this.referenceChatMessages.add({
+            _id: messageText[0]._id,
+            text: messageText[0].text,
+            createdAt: new Date(),
+            user: {
+                _id: this.state.uid,
+                name: this.state.user
+            }
+        })
+    }
+
+    // Adds messages to the current chat log through GiftedChat without touching the state.
     onSend(messages = []) {
-        this.setState(previousState => ({
-            messages: GiftedChat.append(previousState.messages, messages),
-        }))
+        GiftedChat.append(previousState.messages, messages);
+        this.addMessage(messages);
     }
 
     // Changes the system message color depending on the background color for accessibility.
@@ -72,9 +131,9 @@ export default class Chat extends React.Component {
             <GiftedChat
                 renderSystemMessage={this.renderSystemMessage.bind(this)}
                 messages={this.state.messages}
-                onSend = {messages => this.onSend(messages)}
+                onSend = {messages => this.addMessage(messages)}
                 user={{
-                    _id: 1,
+                    _id: this.state.uid,
                 }}
             />
             { 
