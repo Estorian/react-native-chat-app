@@ -33,6 +33,7 @@ export default class Chat extends React.Component {
         this.referenceChatMessages = firebase.firestore().collection("messages");
     }
 
+    // gets messages, either from firebase or from the async-storage depending on isConnected.
     getMessages = async () => {
         let messages = '';
         if (this.state.isConnected) {
@@ -54,6 +55,7 @@ export default class Chat extends React.Component {
                     .onSnapshot(this.onCollectionUpdate);
             
             });
+            this.saveMessages();
         } else {
             try {
                 messages = await AsyncStorage.getItem('messages');
@@ -117,6 +119,7 @@ export default class Chat extends React.Component {
         });
     };
 
+    // Used to clear messages from AsyncStorage
     async deleteMessages() {
         try {
             await AsyncStorage.removeItem('messages');
@@ -142,6 +145,7 @@ export default class Chat extends React.Component {
         this.saveMessages();
     }
 
+    // Backs up messages to the asyncStorage
     saveMessages = async () => {
         
         try {
@@ -178,6 +182,7 @@ export default class Chat extends React.Component {
         }
     }
 
+    // removes the ability to send messages when disconnected from the internet.
     renderInputToolbar(props) {
         if (!this.state.isConnected){
         } else {
