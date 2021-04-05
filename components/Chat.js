@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, Platform, KeyboardAvoidingView } from 'react-native';
-import { GiftedChat, InputToolbar, SystemMessage } from 'react-native-gifted-chat';
+import CustomActions from './CustomActions';
+import { GiftedChat, InputToolbar, SystemMessage, action } from 'react-native-gifted-chat';
 import firebase from 'firebase';
 import firestore from 'firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import MapView from 'react-native-maps';
 
 export default class Chat extends React.Component {
     constructor() {
@@ -109,9 +111,11 @@ export default class Chat extends React.Component {
             let data = doc.data();
             messages.push({
                 _id: data._id,
-                text: data.text,
+                text: data.text || "",
                 createdAt: data.createdAt.toDate(),
-                user: data.user
+                user: data.user,
+                image: data.image || null,
+                location: data.location || null,
             });
         });
         this.setState({
@@ -135,12 +139,14 @@ export default class Chat extends React.Component {
     addMessage = (messageText) => {
         this.referenceChatMessages.add({
             _id: messageText[0]._id,
-            text: messageText[0].text,
+            text: messageText[0].text || "",
             createdAt: new Date(),
             user: {
                 _id: this.state.uid,
                 name: this.state.user
-            }
+            },
+            image: messageText[0].image || null,
+            location: messageText[0].location || null,
         });
         this.saveMessages();
     }
@@ -192,6 +198,31 @@ export default class Chat extends React.Component {
         }
     }
 
+    renderCustomActions = (props) => {
+        return <CustomActions {...props} />;
+    };
+
+    renderCustomView (props) {
+        const { currentMessage } = props;
+        if (currentMessage.location) {
+            return (
+                <MapView
+                    style={{width: 150,
+                        height: 100,
+                        borderRadius: 13,
+                        margin: 3}}
+                    region={{
+                        latitude: currentMessage.location.latitude,
+                        longitude: currentMessage.location.longitude,
+                        latitudeDelta: 0.0922,
+                        longitudeDelta: 0.0421,
+                    }}
+                />
+            );
+        }
+        return null;
+    }
+
     render() {
         let name = this.props.route.params.name;
         let BGColor = this.props.route.params.BGColor;
@@ -205,6 +236,8 @@ export default class Chat extends React.Component {
             <GiftedChat
                 renderSystemMessage={this.renderSystemMessage.bind(this)}
                 renderInputToolbar={this.renderInputToolbar.bind(this)}
+                renderActions={this.renderCustomActions}
+                renderCustomView={this.renderCustomView}
                 messages={this.state.messages}
                 onSend = {messages => this.addMessage(messages)}
                 user={{
